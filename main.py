@@ -85,7 +85,7 @@ def prepare_data():
 
     return xtrain, xtest, ytrain, ytest
 
-def train_SVM(xtrain, ytrain):
+def train_svm(xtrain, ytrain):
 
     model = SVC(C=10, class_weight=None, decision_function_shape='ovo', gamma=0.001, kernel='sigmoid')
     # model = SVC(C=1, kernel='poly', gamma=0.1)  # adjust SVC parameter to create new SVM Model
@@ -113,8 +113,9 @@ def plot_confusionMatrix(xtest, ytest, displayLabels):
     plt.show(matrix)
     plt.show
 
-def runSVM(modelFile, test_dir):
+def run_svm(modelFile, test_dir):
 
+    global total_Discocyte
     global total_Echinocyte
     global total_Stomatocyte
     global total_Others
@@ -135,7 +136,7 @@ def runSVM(modelFile, test_dir):
     blood_img = cv2.imread(test_dir)
 
     # nagcreate lang ako ng copy sa line na to
-    blood_img2 = blood_img
+    #blood_img2 = blood_img
 
     # load image as grayscale
     blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
@@ -154,7 +155,7 @@ def runSVM(modelFile, test_dir):
     # Clean cell edges
     kernel = np.ones((2, 2), np.uint8)
     img = cv2.morphologyEx(invblood_otsu, cv2.MORPH_OPEN, kernel, iterations=3)
-    cv2.imshow('Morphological', img)
+    #cv2.imshow('Morphological', img)
 
     # BlobDetector Parameters
     params = cv2.SimpleBlobDetector_Params()
@@ -222,7 +223,7 @@ def runSVM(modelFile, test_dir):
         y2 = y1 - jl
 
         # create rectangle on each identified blob forming around the center of the blob
-        cv2.rectangle(blood_img2, (x1, y1), (x2, y2), (0, 255, 255), 1)
+        cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 255), 1)
         # cv2.imshow("img2", bld_img2)
 
         # cv2.imshow("Image", blood)
@@ -252,22 +253,27 @@ def runSVM(modelFile, test_dir):
             prediction = model.predict(fd)
             # extImg = np.array(window).flatten()
 
+            # if prediction[0] == 1:
+            #     total_Echinocyte = total_Echinocyte + 1
+            #     cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            #     cv2.putText(blood_img, "echinocyte", (cX - 25, cY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+
+            # elif prediction[0] == 2:
+            #     total_Stomatocyte = total_Stomatocyte + 1
+            #     cv2.rectangle(blood_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            #     cv2.putText(blood_img, "stomatocyte", (cX - 25, cY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0),
+            #                 2)
+
             if prediction[0] == 1:
-                total_Echinocyte = total_Echinocyte + 1
-                cv2.rectangle(blood_img2, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(blood_img2, "echinocyte", (cX - 25, cY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-
-            elif prediction[0] == 2:
-                total_Stomatocyte = total_Stomatocyte + 1
-                cv2.rectangle(blood_img2, (x1, y1), (x2, y2), (255, 0, 0), 2)
-                cv2.putText(blood_img2, "stomatocyte", (cX - 25, cY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0),
-                            2)
+                total_Discocyte = total_Discocyte + 1
+                cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(blood_img, "discocyte", (cX - 25, cY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             elif prediction[0] == 0:
                 total_Others = total_Others + 1
 
-            cv2.imshow("Image", blood_img2)
+            cv2.imshow("Image", blood_img)
 
         except:
             continue
@@ -292,10 +298,11 @@ def runSVM(modelFile, test_dir):
 #     total_Stomatocyte = result[1]
 #     total_Others = result[2]
 
-def outputTotal(Echinocyte,Stomatocyte,Other):
+def output_total(Discocyte, Other): #Stomatocyte,Other):
 
-    print('Total Echinocytes:', Echinocyte)
-    print('Total Stomatocytes: ', Stomatocyte)
+    print('Total Discocytes:', Discocyte)
+    #print('Total Echinocytes:', Echinocyte)
+    #print('Total Stomatocytes: ', Stomatocyte)
     print('Total Others: ', Other)
 
     cv2.waitKey(0)
@@ -305,24 +312,24 @@ def outputTotal(Echinocyte,Stomatocyte,Other):
 if __name__ == "__main__":
 
 #location directory of training images
-    train_dir = 'rawdata_echistomato'
+    train_dir = 'testbed_disco'
 
 #location directory of test image/s
     test_dir = 'test_image\\Im083_02.jpg'
 
 #set dataset and model file
-    dataFile = 'dataset_dir\\DataEchinoStomatoHOG1.pickle'
-    modelFile = 'model_dir\\ModelSVMEchinoStomatoHOG1.sav'
+    dataFile = 'dataset_dir\\Data_Discocyte_vs_Negative_HOG1.pickle'
+    modelFile = 'model_dir\\Model_SVM_Discocyte_only_HOG1.sav'
 
-    categories = ['Negative', 'Pos_Echino', 'Pos_Stomato'] #0, 1, 2
+    categories = ['Negative', 'Pos_Disco'] #'Pos_Stomato'] #0, 1, 2
     # displayLabels = ["Others", "Echinocytes", "Stomatocytes"]
     # categories = ['Neg_Stomatocyte', 'Pos_Stomatocyte']
     # categories = ['Discocyte', 'Echinocyte', 'Negative', 'Others', 'Stomatocyte']
 
 #initialize variables
-    #total_Discocyte
-    total_Echinocyte = 0
-    total_Stomatocyte = 0
+    total_Discocyte = 0
+    #total_Echinocyte = 0
+    #total_Stomatocyte = 0
     total_Others = 0
 
 #resize for imread
@@ -336,15 +343,14 @@ if __name__ == "__main__":
 
     # create_data(train_dir)
     # xtrain, xtest, ytrain, ytest = prepare_data()
-    # train_SVM(xtrain, ytrain)
+    # train_svm(xtrain, ytrain)
 
-    runSVM(modelFile, test_dir)
+    run_svm(modelFile, test_dir)
+    output_total(total_Discocyte, total_Others) #total_Stomatocyte, total_Others)
 
-    # total_Echinocyte = result[0]
-    # total_Stomatocyte = result[1]
-    # total_Others = result[2]
-
-    outputTotal(total_Echinocyte, total_Stomatocyte, total_Others)
+# total_Echinocyte = result[0]
+# total_Stomatocyte = result[1]
+# total_Others = result[2]
 
 # total_Echinocyte = runSVM(modelFile,test_dir)[0]
 # total_Stomatocyte = runSVM(modelFile,test_dir)[1]
