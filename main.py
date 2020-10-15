@@ -17,23 +17,23 @@ from skimage.feature import hog
 out_dir = os.path.join(os.getcwd(), "output")
 os.makedirs(out_dir, exist_ok = True)
 
-def create_data(train_dir):
+def create_data(trdir):
+    global dataFile
+
     data = []
 
     for category in categories:
-        path = os.path.join(train_dir,category)
+        path = os.path.join(trdir, category)
         label = categories.index(category)
 
 
         for img in os.listdir(path):
-            imgpath = os.path.join(path,img)
-            blood_img=cv2.imread(imgpath)
+            imgpath = os.path.join(path, img)
+            blood_img = cv2.imread(imgpath)
             blood_img = cv2.resize(blood_img, (48, 48))
             blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
 
-
-
-            image=np.array(blood_img_gray)#.flatten()
+            image = np.array(blood_img_gray)#.flatten()
 
             data.append([image,label])
 
@@ -46,6 +46,7 @@ def create_data(train_dir):
     pick_in.close()
 
 def prepare_data():
+
 #load dataset from pickle file
     pick_in = open(dataFile, 'rb')
     data = pickle.load(pick_in)
@@ -85,11 +86,12 @@ def prepare_data():
 
     return xtrain, xtest, ytrain, ytest
 
-def train_svm(xtrain, ytrain):
+def train_svm(xtr, ytr):
+    global modelFile
 
     model = SVC(C=10, class_weight=None, decision_function_shape='ovo', gamma=0.001, kernel='sigmoid')
     # model = SVC(C=1, kernel='poly', gamma=0.1)  # adjust SVC parameter to create new SVM Model
-    model.fit(xtrain, ytrain)
+    model.fit(xtr, ytr)
 
 #save model into .SAV file
     pick = open(modelFile, 'wb')
@@ -184,7 +186,7 @@ def run_svm(modelFile, test_dir):
     cv2.imshow("Keypoints", draw)
 
     # Position offset variables
-    ul = 56
+    ul = 60
     jl = 120
 
     #HOG Parameters
@@ -197,6 +199,7 @@ def run_svm(modelFile, test_dir):
 
     # find center of each blob
     contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # contours, hierarchy = cv2.findContours(blood_img_otsu, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for c in contours:
         M = cv2.moments(c)
 
@@ -222,10 +225,15 @@ def run_svm(modelFile, test_dir):
         x2 = x1 + jl
         y2 = y1 - jl
 
-        # create rectangle on each identified blob forming around the center of the blob
-        cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 255), 1)
-        # cv2.imshow("img2", bld_img2)
+        # x1 = cX - w
+        # y1 = cY + h
+        #
+        # x2 = x1 + w
+        # y2 = y1 - h
 
+        # create rectangle on each identified blob forming around the center of the blob
+        cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 200), 1)
+        # cv2.imshow("img2", bld_img2)
         # cv2.imshow("Image", blood)
 
         # pwedeng icomment muna itong since ung currently trained dataset, nakabase sa grayscale lang.
@@ -237,20 +245,28 @@ def run_svm(modelFile, test_dir):
             continue
 
         try:
-            clone = blood_img_gray.copy()
-            patch1 = clone[x1:x1 + jl, y1:y1 + jl]
-            patch2 = cv2.resize(patch1, (48, 48))
+            clone = blood_img.copy()
 
-            patch2 = np.array(patch2)
+            patch1 = clone[y1:y1 + jl, x1:x1 + jl]
+            # patch1 = clone[x1:x2, y1:y2]
+            # patch1 = clone[y1:y2, x1,x2]
+
+            # patch1 = clone[x1:x1 + jl, y1:y1 + jl]
+            patch2 = cv2.resize(patch1, (48, 48))
+            cv2.imshow("cropped",patch2)
+            patch3 = cv2.cvtColor(patch2, cv2.COLOR_BGR2GRAY)
+
+            patch4 = np.array(patch3)
 
             # Apply HOG for each image on each iteration
-            fd, hog_image = hog(patch2, orientations=8, pixels_per_cell=(ppc, ppc), cells_per_block=(cpb, cpb),
+            fd, hog_image = hog(patch4, orientations=8, pixels_per_cell=(ppc, ppc), cells_per_block=(cpb, cpb),
                                 block_norm='L2', visualize=True)
 
             #patch_final = patch2#.flatten()
             #patch_final = patch_final.reshape(-1, 2304)
 
             prediction = model.predict(fd)
+            #prediction = model.predict(fd)
             # extImg = np.array(window).flatten()
 
             # if prediction[0] == 1:
@@ -287,17 +303,6 @@ def run_svm(modelFile, test_dir):
     #
     # cv2.waitKey(0)
 
-# def setResult(result):
-#
-#     global result
-#     global total_Echinocyte
-#     global total_Stomatocyte
-#     global total_Others
-#
-#     total_Echinocyte = result[0]
-#     total_Stomatocyte = result[1]
-#     total_Others = result[2]
-
 def output_total(Discocyte, Other): #Stomatocyte,Other):
 
     print('Total Discocytes:', Discocyte)
@@ -308,14 +313,49 @@ def output_total(Discocyte, Other): #Stomatocyte,Other):
     cv2.waitKey(0)
 
 
+def single_cell_test(tstdir):
+
+    # load model
+    pick = open(modelFile, 'rb')  # change model depending on SVC parameter
+    model = pickle.load(pick)
+    pick.close()
+
+    blood_img = cv2.imread(tstdir)### testdir -- local variable for single_cell_test,
+                                  ### please refer to test_dir when selecting another single cell image file
+
+    blood_img = cv2.resize(blood_img, (48, 48))
+    blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
+
+    image = np.array(blood_img_gray)
+
+    #------------------------HOG TREATMENT----------------------------#
+    ppc = 2
+    cpb = 2
+
+    hog_images = []
+    hog_features = []
+    labels = []
+
+    fd, hog_image = hog(image, orientations=8, pixels_per_cell=(ppc, ppc), cells_per_block=(cpb, cpb), block_norm='L2', visualize=True)
+    hog_images.append(hog_image)
+    hog_features.append(fd)
+
+    fd = fd.reshape(-1, 16928)
+
+    prediction = model.predict(fd)
+    print('RBC Type Prediction: ', categories[prediction[0]])
+
+    plt.imshow(hog_image) #, cmap='gray')
+    plt.show()
+
 
 if __name__ == "__main__":
 
 #location directory of training images
-    train_dir = 'testbed_disco'
+    train_dir = 'trainingbed_\\trbed_disco'
 
 #location directory of test image/s
-    test_dir = 'test_image\\Im083_02.jpg'
+    test_dir = 'test_image\\single_cell\\Disco (66).jpg'
 
 #set dataset and model file
     dataFile = 'dataset_dir\\Data_Discocyte_vs_Negative_HOG1.pickle'
@@ -345,15 +385,10 @@ if __name__ == "__main__":
     # xtrain, xtest, ytrain, ytest = prepare_data()
     # train_svm(xtrain, ytrain)
 
-    run_svm(modelFile, test_dir)
-    output_total(total_Discocyte, total_Others) #total_Stomatocyte, total_Others)
+    # run_svm(modelFile, test_dir)
+    # output_total(total_Discocyte, total_Others) #total_Stomatocyte, total_Others)
 
-# total_Echinocyte = result[0]
-# total_Stomatocyte = result[1]
-# total_Others = result[2]
+    single_cell_test(test_dir)
 
-# total_Echinocyte = runSVM(modelFile,test_dir)[0]
-# total_Stomatocyte = runSVM(modelFile,test_dir)[1]
-# total_Others = runSVM(modelFile,test_dir)[2]
 
 
