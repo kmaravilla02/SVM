@@ -341,10 +341,13 @@ def run_svm_OTSU(modelFile, test_dir):
 
 def output_total(Discocyte, Echinocyte, Stomatocyte, Other): #Stomatocyte,Other):
 
-    print('Total Discocytes:', Discocyte)
-    print('Total Echinocytes:', Echinocyte)
-    print('Total Stomatocytes: ', Stomatocyte)
-    print('Total Others: ', Other)
+
+    print('\nNumber of Identified Cells\n')
+
+    print('Discocytes:', Discocyte)
+    print('Echinocytes:', Echinocyte)
+    print('Stomatocytes:', Stomatocyte)
+    print('Other Cells:', Other)
 
     cv2.waitKey(0)
 
