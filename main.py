@@ -391,7 +391,7 @@ if __name__ == "__main__":
     train_dir = 'trainingbed_\\trbed_main'
 
 #location directory of test image/s
-    test_dir = 'test_image\\Echinotest.jpg'
+    test_dir = 'test_image\\Stomatest.jpg'
 
 #set dataset and model file
     dataFile = 'dataset_dir\\OTSU\\Data_DiscoEchinoStomatoOTSU4.pickle'
