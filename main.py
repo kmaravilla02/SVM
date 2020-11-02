@@ -283,8 +283,7 @@ def run_svm_OTSU(modelFile, test_dir):
 
         # create rectangle on each identified blob forming around the center of the blob
         cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 200), 1)
-        cv2.imshow("Moments", blood_img)
-
+        cv2.imshow("Center", blood_img)
         cv2.waitKey(0)
         # cv2.imshow("Image", blood)
 
