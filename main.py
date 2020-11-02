@@ -21,7 +21,6 @@ from skimage.segmentation import clear_border
 out_dir = os.path.join(os.getcwd(), "output")
 os.makedirs(out_dir, exist_ok = True)
 
-
 def create_data_OTSU(trdir):
     global dataFile
 
@@ -156,14 +155,14 @@ def run_svm_OTSU(modelFile, test_dir):
 
     # sure background area
     sure_bg = cv2.dilate(opening, kernel1, iterations=10)
-    cv2.imshow("bg", sure_bg)
-    cv2.waitKey(0)
+    # cv2.imshow("bg", sure_bg)
+    # cv2.waitKey(0)
 
     # Finding sure foreground area
     dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3)
     cv2.normalize(dist_transform, dist_transform, 0, 1.0, cv2.NORM_MINMAX)
-    cv2.imshow("normalized", dist_transform)
-    cv2.waitKey(0)
+    # cv2.imshow("normalized", dist_transform)
+    # cv2.waitKey(0)
 
     ret, sure_fg = cv2.threshold(dist_transform, 0.157 * dist_transform.max(), 255, 0) #0.157 ##DEFAULT FOR IM083_XX IMAGES
     cv2.imshow("fg", sure_fg)
@@ -191,7 +190,7 @@ def run_svm_OTSU(modelFile, test_dir):
 
     ws = color.label2rgb(markers, bg_label=0)
     cv2.imshow("overlay on original image", blood_img)
-    cv2.imshow("watershed", ws)
+    # cv2.imshow("watershed", ws)
     cv2.waitKey(0)
 
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -208,7 +207,7 @@ def run_svm_OTSU(modelFile, test_dir):
     params.maxThreshold = 256
     params.filterByArea = True
     params.maxArea = 13000
-    params.minArea = 1000 #2000 #CHANGE VALUE per VARYING IMAGE IF NOT FROM SAME SET OF IMAGE
+    params.minArea = 2000 #2000 default#CHANGE VALUE per VARYING IMAGE IF NOT FROM SAME SET OF IMAGE
     params.filterByColor = True
     params.blobColor = 255
     params.filterByCircularity = False
@@ -230,25 +229,24 @@ def run_svm_OTSU(modelFile, test_dir):
     #     print(keypoints.size)
 
     cv2.imshow("Keypoints", draw)
-
     cv2.waitKey(0)
 
     #General Test Param
-    # # Position offset variables
-    # ul = 50
-    # jl = 100
-    #
-    # #patch size
-    # PTCH_SZ = 55 #52
+    # Position offset variables
+    ul = 50
+    jl = 100
+
+    #patch size
+    PTCH_SZ = 55 #52
 #-----------------------------------------
 
-    #Stomatest_Param
-    # Position offset variables
-    ul = 35
-    jl = 70
-
-    # patch size
-    PTCH_SZ = 30  # 52
+    # #Stomatest_Param
+    # # Position offset variables
+    # ul = 35
+    # jl = 70
+    #
+    # # patch size
+    # PTCH_SZ = 30  # 52
 #-----------------------------------------
 
     # #Echinotest Param
@@ -288,7 +286,6 @@ def run_svm_OTSU(modelFile, test_dir):
         # cv2.imshow("Image", blood)
 
         # pwedeng icomment muna itong since ung currently trained dataset, nakabase sa grayscale lang.
-
 
         # If patch of image to be extracted exceeds the image size (640x640),
         # ignore patch, then move on to next patch
@@ -394,7 +391,7 @@ if __name__ == "__main__":
     train_dir = 'trainingbed_\\trbed_main'
 
 #location directory of test image/s
-    test_dir = 'test_image\\Stomatest.jpg'
+    test_dir = 'test_image\\Im083_02.jpg'
 
 #set dataset and model file
     dataFile = 'dataset_dir\\OTSU\\Data_DiscoEchinoStomatoOTSU4.pickle'
