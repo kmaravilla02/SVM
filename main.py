@@ -240,7 +240,7 @@ def run_svm_OTSU(modelFile, test_dir):
     #
     # #patch size
     # PTCH_SZ = 55 #52
-
+#-----------------------------------------
 
     #Stomatest_Param
     # Position offset variables
@@ -249,6 +249,7 @@ def run_svm_OTSU(modelFile, test_dir):
 
     # patch size
     PTCH_SZ = 30  # 52
+#-----------------------------------------
 
     # #Echinotest Param
     # # Position offset variables
