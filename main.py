@@ -150,8 +150,7 @@ def run_svm_OTSU(modelFile, test_dir):
     kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7)) #7,7 ###CHANGE VALUE per VARYING IMAGE IF NOT FROM SAME SET OF IMAGE
     opening = cv2.morphologyEx(invblood_otsu, cv2.MORPH_OPEN, kernel1, iterations=1)
     cv2.imshow("erode-dilate", opening)
-
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     # sure background area
     sure_bg = cv2.dilate(opening, kernel1, iterations=10)
@@ -164,7 +163,7 @@ def run_svm_OTSU(modelFile, test_dir):
     # cv2.imshow("normalized", dist_transform)
     # cv2.waitKey(0)
 
-    ret, sure_fg = cv2.threshold(dist_transform, 0.157 * dist_transform.max(), 255, 0) #0.157 ##DEFAULT FOR IM083_XX IMAGES
+    ret, sure_fg = cv2.threshold(dist_transform, 0.23 * dist_transform.max(), 255, 0) #0.157 ##DEFAULT FOR IM083_XX IMAGES
     cv2.imshow("fg", sure_fg)
 
     # sure_fg = cv2.dilate(sure_fg, kernel1)
@@ -174,7 +173,7 @@ def run_svm_OTSU(modelFile, test_dir):
     sure_fg = np.uint8(sure_fg)
     unknown = cv2.subtract(sure_bg, sure_fg)
 
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     # Marker labelling
     ret, markers = cv2.connectedComponents(sure_fg)
@@ -186,12 +185,12 @@ def run_svm_OTSU(modelFile, test_dir):
     markers[unknown == 255] = 0
 
     markers = cv2.watershed(blood_img, markers)
-    blood_img[markers == -1] = [0, 255, 255]
+    # blood_img[markers == -1] = [0, 255, 255]
 
     ws = color.label2rgb(markers, bg_label=0)
-    cv2.imshow("overlay on original image", blood_img)
+    # cv2.imshow("overlay on original image", blood_img)
     # cv2.imshow("watershed", ws)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in contours:
@@ -229,7 +228,7 @@ def run_svm_OTSU(modelFile, test_dir):
     #     print(keypoints.size)
 
     cv2.imshow("Keypoints", draw)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     #General Test Param
     # Position offset variables
@@ -282,7 +281,7 @@ def run_svm_OTSU(modelFile, test_dir):
         # create rectangle on each identified blob forming around the center of the blob
         cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 200), 1)
         cv2.imshow("Midpoint", blood_img)
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
         # cv2.imshow("Image", blood)
 
         # pwedeng icomment muna itong since ung currently trained dataset, nakabase sa grayscale lang.
@@ -391,7 +390,7 @@ if __name__ == "__main__":
     train_dir = 'trainingbed_\\trbed_main'
 
 #location directory of test image/s
-    test_dir = 'test_image\\Im083_02.jpg'
+    test_dir = 'test_image\\Im083_04.jpg'
 
 #set dataset and model file
     dataFile = 'dataset_dir\\OTSU\\Data_DiscoEchinoStomatoOTSU4.pickle'
