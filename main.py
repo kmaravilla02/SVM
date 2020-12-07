@@ -257,7 +257,7 @@ def run_svm(modelFile, test_dir):
         except BaseException as ex:
             continue
 
-def output_total(Discocyte, Echinocyte, Stomatocyte, Other): #Stomatocyte,Other):
+def output_total(Discocyte, Echinocyte, Stomatocyte, Other):
 
 
     print('\nNumber of Identified Cells\n')
@@ -291,11 +291,11 @@ if __name__ == "__main__":
     prediction = None
 
 #-----------------------------------------------------
-    # create_data_OTSU(train_dir)
-    # xtrain, xtest, ytrain, ytest = prepare_data_OTSU()
+    # create_data(train_dir)
+    # xtrain, xtest, ytrain, ytest = prepare_data()
     # train_svm(xtrain, ytrain)
 
-    run_svm_OTSU(modelFile, test_dir)
+    run_svm(modelFile, test_dir)
 
 #output---------------------------------
     output_total(total_Discocyte, total_Echinocyte, total_Stomatocyte, total_Others) #total_Stomatocyte, total_Others)
