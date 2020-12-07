@@ -3,25 +3,11 @@ import numpy as np
 import cv2
 import pickle
 import random
-import imutils
-import time
-import matplotlib.pyplot as plt
-#from sklearn.metrics import plot_confusion_matrix
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from skimage.feature import hog
 from skimage import measure, color, io
-from skimage.segmentation import clear_border
 
-
-#path where output images will be stored
-#(Hindi pa ko nag-ssave ng output image so di ko pa ginagamit to. Nakalagay lang siya ngayon dito sa code)
-out_dir = os.path.join(os.getcwd(), "output")
-os.makedirs(out_dir, exist_ok = True)
-
-def create_data_OTSU(trdir):
+def create_data(trdir):
     global dataFile
 
     data = []
@@ -53,7 +39,7 @@ def create_data_OTSU(trdir):
     pickle.dump(data, pick_in)
     pick_in.close()
 
-def prepare_data_OTSU():
+def prepare_data():
 
 #load dataset from pickle file
     pick_in = open(dataFile, 'rb')
@@ -72,29 +58,10 @@ def prepare_data_OTSU():
 
     return xtrain, xtest, ytrain, ytest
 
-def create_data_WS(trdir):
-    global dataFile
-
-    data = []
-
-    for category in categories:
-        path = os.path.join(trdir, category)
-        label = categories.index(category)
-
-        for img in os.listdir(path):
-            imgpath = os.path.join(path, img)
-            blood_img = cv2.imread(imgpath)
-            blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
-            ret, blood_img_otsu = cv2.threshold(blood_img_gray, 0, 255, cv2.THRESH_OTSU)
-            blood_imgf = cv2.resize(blood_img_otsu, (48, 48))
-
 def train_svm(xtr, ytr):
     global modelFile
 
     model = SVC(C=1, class_weight='balanced', gamma=1, kernel='poly') #OTSU
-    # model = SVC(C=10, class_weight='balanced', gamma=1, kernel='linear') #HOG
-    # model = SVC(C=10, class_weight='balanced', decision_function_shape='ovo', gamma='auto', kernel='sigmoid')
-    # model = SVC(C=1, kernel='poly', gamma=0.1)  # adjust SVC parameter to create new SVM Model
     model.fit(xtr, ytr)
 
 #save model into .SAV file
@@ -102,12 +69,7 @@ def train_svm(xtr, ytr):
     pickle.dump(model, pick)
     pick.close()
 
-def preClassification_report(xtest, ytest): #displayLabels):
-
-    print(classification_report(ytest, xtest))
-    print(confusion_matrix(ytest, xtest))
-
-def run_svm_OTSU(modelFile, test_dir):
+def run_svm(modelFile, test_dir):
 
     global total_Discocyte
     global total_Echinocyte
@@ -120,20 +82,9 @@ def run_svm_OTSU(modelFile, test_dir):
     model = pickle.load(pick)
     pick.close()
 
-    # image pipeline
-    # img1 = glob.glob("test_image/*.jpg")
-    # for images in img1:
-    #     # load image
-    #     bld_img = cv2.imread(images)
-    #     bld_img = cv2.resize(bld_img, dsize)
-    #     scan_image(bld_img, winW, winH, model)
-
     # load single image
     blood_img = cv2.imread(test_dir)
     cv2.waitKey(0)
-
-    # nagcreate lang ako ng copy sa line na to
-    #blood_img2 = blood_img
 
     # load image as grayscale
     blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
@@ -163,7 +114,7 @@ def run_svm_OTSU(modelFile, test_dir):
     # cv2.imshow("normalized", dist_transform)
     # cv2.waitKey(0)
 
-    ret, sure_fg = cv2.threshold(dist_transform, 0.23 * dist_transform.max(), 255, 0) #0.157 ##DEFAULT FOR IM083_XX IMAGES
+    ret, sure_fg = cv2.threshold(dist_transform, 0.23 * dist_transform.max(), 255, 0) #0.23 ##DEFAULT FOR IM083_XX IMAGES
     cv2.imshow("fg", sure_fg)
 
     # sure_fg = cv2.dilate(sure_fg, kernel1)
@@ -172,25 +123,6 @@ def run_svm_OTSU(modelFile, test_dir):
     # Finding unknown region
     sure_fg = np.uint8(sure_fg)
     unknown = cv2.subtract(sure_bg, sure_fg)
-
-    # cv2.waitKey(0)
-
-    # Marker labelling
-    ret, markers = cv2.connectedComponents(sure_fg)
-
-    # Add one to all labels so that sure background is not 0, but 1
-    markers = markers + 1
-
-    # Now, mark the region of unknown with zero
-    markers[unknown == 255] = 0
-
-    markers = cv2.watershed(blood_img, markers)
-    # blood_img[markers == -1] = [0, 255, 255]
-
-    ws = color.label2rgb(markers, bg_label=0)
-    # cv2.imshow("overlay on original image", blood_img)
-    # cv2.imshow("watershed", ws)
-    # cv2.waitKey(0)
 
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in contours:
@@ -205,8 +137,8 @@ def run_svm_OTSU(modelFile, test_dir):
     params.minThreshold = 0
     params.maxThreshold = 256
     params.filterByArea = True
-    params.maxArea = 13000
-    params.minArea = 2000 #2000 default#CHANGE VALUE per VARYING IMAGE IF NOT FROM SAME SET OF IMAGE
+    params.maxArea = 13000 #13000
+    params.minArea = 2000 #2000 default #CHANGE VALUE per VARYING IMAGE IF NOT FROM SAME SET OF IMAGE
     params.filterByColor = True
     params.blobColor = 255
     params.filterByCircularity = False
@@ -224,11 +156,7 @@ def run_svm_OTSU(modelFile, test_dir):
     keypoints = detector.detect(img)
 
     draw = cv2.drawKeypoints(img, keypoints, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # for keypoints in keypoints:
-    #     print(keypoints.size)
-
     cv2.imshow("Keypoints", draw)
-    # cv2.waitKey(0)
 
     #General Test Param
     # Position offset variables
@@ -280,11 +208,7 @@ def run_svm_OTSU(modelFile, test_dir):
 
         # create rectangle on each identified blob forming around the center of the blob
         cv2.rectangle(blood_img, (x1, y1), (x2, y2), (0, 255, 200), 1)
-        cv2.imshow("Midpoint", blood_img)
-        # cv2.waitKey(0)
-        # cv2.imshow("Image", blood)
-
-        # pwedeng icomment muna itong since ung currently trained dataset, nakabase sa grayscale lang.
+        cv2.imshow("Image", blood_img)
 
         # If patch of image to be extracted exceeds the image size (640x640),
         # ignore patch, then move on to next patch
@@ -331,7 +255,6 @@ def run_svm_OTSU(modelFile, test_dir):
             cv2.imshow("Image", blood_img)
 
         except BaseException as ex:
-            #print(ex.message, ex.args)
             continue
 
 def output_total(Discocyte, Echinocyte, Stomatocyte, Other): #Stomatocyte,Other):
@@ -346,44 +269,6 @@ def output_total(Discocyte, Echinocyte, Stomatocyte, Other): #Stomatocyte,Other)
 
     cv2.waitKey(0)
 
-def single_cell_test_OTSU(tstdir):
-
-    # load model
-    pick = open(modelFile, 'rb')  # change model depending on SVC parameter
-    model = pickle.load(pick)
-    pick.close()
-
-    blood_img = cv2.imread(tstdir)### testdir -- local variable for single_cell_test,
-                                  ### please refer to test_dir when selecting another single cell image file
-
-    blood_img_gray = cv2.cvtColor(blood_img, cv2.COLOR_BGR2GRAY)
-    ret, blood_img_otsu = cv2.threshold(blood_img_gray, 0, 255, cv2.THRESH_OTSU)
-    blood_imgf = cv2.resize(blood_img_otsu, (48, 48))
-
-    image = np.array(blood_imgf).flatten()
-
-    imgf= image.reshape(-1,2304)
-
-    prediction = model.predict(imgf)
-    print('RBC Type Prediction: ', categories[prediction[0]])
-
-    cv2.namedWindow("otsu", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("otsu", 48 * 6, 48 * 6)
-
-    cv2.namedWindow("48x48", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("48x48", 48 * 6, 48 * 6)
-
-    cv2.namedWindow("imggr", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("imggr", 48 * 6, 48 * 6)
-
-    cv2.imshow("otsu", blood_img_otsu)
-    cv2.imshow("48x48", blood_imgf)
-    cv2.imshow("imggr", blood_img_gray)
-
-    plt.imshow(blood_imgf) #, cmap='gray')
-    plt.show()
-
-
 if __name__ == "__main__":
 
 #location directory of training images
@@ -397,9 +282,6 @@ if __name__ == "__main__":
     modelFile = 'model_dir\\OTSU\\ModelSVM_DiscoEchinoStomatoOTSU4.sav'
 
     categories = ['Negative', 'Pos_Disco', 'Pos_Echino', 'Pos_Stomato'] #0, 1, 2
-    # displayLabels = ["Others", "Echinocytes", "Stomatocytes"]
-    # categories = ['Neg_Stomatocyte', 'Pos_Stomatocyte']
-    # categories = ['Discocyte', 'Echinocyte', 'Negative', 'Others', 'Stomatocyte']
 
 #initialize variables
     total_Others = 0
@@ -408,17 +290,12 @@ if __name__ == "__main__":
     total_Stomatocyte = 0
     prediction = None
 
-#resize for imread
-    # dsize = (896, 672)
-
 #-----------------------------------------------------
     # create_data_OTSU(train_dir)
     # xtrain, xtest, ytrain, ytest = prepare_data_OTSU()
     # train_svm(xtrain, ytrain)
 
     run_svm_OTSU(modelFile, test_dir)
-
-    # single_cell_test_OTSU(test_dir)
 
 #output---------------------------------
     output_total(total_Discocyte, total_Echinocyte, total_Stomatocyte, total_Others) #total_Stomatocyte, total_Others)
